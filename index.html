@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Workstation Dashboard</title>
+  <style>
+    :root {
+      --bg-color: #08090C;
+      --card-bg: #12141D;
+      --border-color: #1E2230;
+      --accent-blue: #00F0FF;
+      --accent-green: #22C55E;
+      --accent-red: #EF4444;
+      --accent-amber: #F59E0B;
+      --text-main: #FFFFFF;
+      --text-muted: #8E95A5;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 30px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+    }
+
+    .btn-connect {
+      background: var(--accent-blue);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .alert-banner {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      color: #FCA5A5;
+      padding: 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-bottom: 25px;
+      text-align: center;
+      animation: pulse 1.5s infinite;
+    }
+
+    .break-banner {
+      display: none;
+      background: rgba(245, 158, 11, 0.2);
+      border: 2px solid var(--accent-amber);
+      color: #FDE047;
+      padding: 18px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 25px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .card-title {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .card-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      background: #1E293B;
+      color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1 style="margin: 0; font-size: 24px;">SMART WORKSTATION DASHBOARD</h1>
+      <p style="margin: 5px 0 0 0; color: var(--text-muted);">Real-time Telemetry &amp; Distraction Monitoring</p>
+    </div>
+    <button class="btn-connect" onclick="connectSerial()">CONNECT WORKSTATION</button>
+  </div>
+
+  <div id="alertBanner" class="alert-banner">
+    ⚠️ ACOUSTIC MISMATCH DETECTED — Sustained noise peak in Focus Mode.
+  </div>
+
+  <div id="breakBanner" class="break-banner">
+    ☕ TAKE A BREAK! — 45 minutes reached in Focus Mode. Consider stepping away or switching to RELAX mode.
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">ACTIVE WORK MODE</div>
+      <div class="card-value" id="valMode"><span class="badge">DISCONNECTED</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AMBIENT LIGHT (LDR)</div>
+      <div class="card-value" id="valLux">-- <span style="font-size: 18px; color: var(--text-muted);">lx</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">PWM LAMP OUTPUT</div>
+      <div class="card-value" id="valPWM">-- <span style="font-size: 18px; color: var(--text-muted);">%</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SESSION TIMER</div>
+      <div class="card-value" id="valTimer" style="color: var(--accent-green);">00:00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ACOUSTIC STATE</div>
+      <div class="card-value" id="valNoise" style="font-size: 24px; color: var(--accent-green);">STABLE</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SYSTEM STATUS</div>
+      <div class="card-value" id="valStatus" style="font-size: 24px; color: var(--text-main);">READY</div>
+    </div>
+  </div>
+
+  <script>
+    let port, reader;
+
+    async function connectSerial() {
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        
+        const decoder = new TextDecoderStream();
+        port.readable.pipeTo(decoder.writable);
+        reader = decoder.readable.getReader();
+
+        let buffer = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+          
+          let lines = buffer.split("\n");
+          buffer = lines.pop();
+
+          for (let line of lines) {
+            parseSerialData(line.trim());
+          }
+        }
+      } catch (err) {
+        alert("WebSerial Connection Failed: " + err);
+      }
+    }
+
+    function parseSerialData(line) {
+      if (!line.startsWith("DATA:")) return;
+
+      let payload = line.replace("DATA:", "").split(",");
+      if (payload.length < 6) return;
+
+      let [mode, lux, pwm, noiseFlag, timerSec, status] = payload;
+
+      document.getElementById("valMode").innerHTML = `<span class="badge">${mode}</span>`;
+      document.getElementById("valLux").innerText = lux;
+      document.getElementById("valPWM").innerText = Math.round((pwm / 255) * 100);
+
+      // Session Timer (Count-up)
+      let sec = parseInt(timerSec);
+      let m = Math.floor(sec / 60).toString().padStart(2, '0');
+      let s = (sec % 60).toString().padStart(2, '0');
+      document.getElementById("valTimer").innerText = `${m}:${s}`;
+
+      // Banners
+      let alertBanner = document.getElementById("alertBanner");
+      let breakBanner = document.getElementById("breakBanner");
+      let noiseVal = document.getElementById("valNoise");
+
+      // Noise Mismatch Banner
+      if (noiseFlag === "1") {
+        alertBanner.style.display = "block";
+        noiseVal.innerText = "MISMATCH";
+        noiseVal.style.color = "#EF4444";
+      } else {
+        alertBanner.style.display = "none";
+        noiseVal.innerText = "STABLE";
+        noiseVal.style.color = "#22C55E";
+      }
+
+      // Take a Break Banner
+      if (status === "TAKE_A_BREAK") {
+        breakBanner.style.display = "block";
+      } else {
+        breakBanner.style.display = "none";
+      }
+
+      document.getElementById("valStatus").innerText = status;
+    }
+  </script>
+</body>
+</html>
