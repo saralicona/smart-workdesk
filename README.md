@@ -1,5 +1,5 @@
 ### Repository File Index
-* **Firmware (C++):** Full microcontroller logic with extensive line-by-line comments is located in `SmartWorkstation.ino`.
+* **Firmware (C++):** Full microcontroller logic with extensive line-by-line comments is located in `smartWorkstation.ino`.
 * **Dashboard (HTML):** WebSerial user interface and telemetry receiver is located in `index.html`.
 * **Documentation (This File):** This `README.md` provides system architecture overviews, setup guides, reliability metrics, and AI/reference acknowledgments.
 
