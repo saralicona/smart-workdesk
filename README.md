@@ -5,7 +5,7 @@
 
 ---
 
-# Context-Aware Smart Workstation 
+# Project Overview 
 
 A physical-to-digital desk ecosystem inspired by Apple’s Focus Modes. 
 The system evaluates ambient environmental data (light and sound) 
@@ -14,7 +14,10 @@ non-intrusive distraction alerts through a WebSerial digital dashboard.
 
 <img width="195.3" height="152.3" alt="image" src="https://github.com/user-attachments/assets/e19d4e75-99e5-4322-8743-cf424854ff46" />
 
+---
+## System Concept
 
+### USER SELECTS MODE - COLLECT DATA - INTERPRET DATA - DECIDE - ADAPT - FEEDBACK
 ---
 
 ## System Overview & Architecture
@@ -65,7 +68,7 @@ The workstation uses a decoupled **Interface Separation Strategy**:
 4. Press `SELECT` on the physical breadboard to exit the `WELCOME` screen and initiate a mode.
 
 ---
-## About the code
+## About the Code
 ### Software Architecture & Code Structure
 
 The workstation firmware is structured as a non-blocking state machine using `millis()` timing to maintain responsiveness without `delay()` freezes.
@@ -85,7 +88,7 @@ The workstation firmware is structured as a non-blocking state machine using `mi
    * Streams formatted CSV strings over Serial at 115200 baud (`DATA:MODE,LUX,PWM,NOISE,TIMER,STATUS`).
    * Parsed asynchronously in JavaScript (`index.html`) using `TextDecoderStream` to dynamically update UI components and toggle alert banners.
   
-# Some examples 
+## Some Examples 
 ### Key Logic Example 1: De-noising Noise Filter
 To prevent false alarms, the system requires sound pin D5 to stay continuous for over 100ms:
 
@@ -118,6 +121,13 @@ To guarantee **≥95% operational reliability** across extended use, the prototy
 | **Acoustic Noise Filter Accuracy** | $\ge 95\%$ | **96.0%** (48 / 50 ambient false-positives filtered) | **PASS** |
 | **Serial Packet Transmission Integrity** | $\ge 99\%$ | **99.8%** (0 frame corruptions across 36,000 packets) | **PASS** |
 | **60-Minute Timed Soak Test** | 0 memory leaks | **0 freezes / 0 buffer overflows** at 10Hz sampling | **PASS** |
+
+---
+## Future Development
+
+Future versions could explore learning from user feedback,
+additional environmental parameters and more personalised
+adaptation.
 
 ---
 
