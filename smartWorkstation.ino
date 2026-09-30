@@ -2,28 +2,28 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-// --- SCREEN CONFIGURATION ---
+// OLED DISPLAY CONFIGURATION
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET    -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// --- PIN DEFINITIONS ---
+// PIN DEFINITIONS 
 const int PIN_BTN_UP     = 2; // Nav: UP
-const int PIN_BTN_DOWN   = 3; // Nav: DOWN
-const int PIN_BTN_SELECT = 4; // Nav: SELECT
+const int PIN_BTN_DOWN   = 4; // Nav: DOWN
+const int PIN_BTN_SELECT = 3; // Nav: SELECT
 const int PIN_SOUND_D5   = 5; // Digital Sound Sensor (CZN-1E)
 const int PIN_LED_PWM    = 6; // Green Task Light PWM
 const int PIN_LDR_A0     = A0;// Analog Light Sensor
 
-// --- MENU & SYSTEM STATES ---
+//  MENU & SYSTEM STATES 
 enum SystemMode { MODE_WELCOME, MODE_FOCUS, MODE_SOCIAL, MODE_RELAX };
 SystemMode currentMode = MODE_WELCOME; // Starts at Welcome state
 
 int menuIndex = 0; // 0=FOCUS, 1=SOCIAL, 2=RELAX
 const int totalModes = 3;
 
-// --- TIMERS & DEBOUNCE VARIABLES ---
+//  TIMERS & DEBOUNCE VARIABLES 
 unsigned long lastDebounceTime = 0;
 const unsigned long DEBOUNCE_DELAY = 250;
 
@@ -52,9 +52,9 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  // ==========================================
+  
   // 1. GET DATA: NAVIGATION BUTTON INPUTS
-  // ==========================================
+ 
   if (currentMillis - lastDebounceTime > DEBOUNCE_DELAY) {
     if (digitalRead(PIN_BTN_DOWN) == LOW) {
       menuIndex = (menuIndex + 1) % totalModes;
@@ -70,23 +70,22 @@ void loop() {
       else if (menuIndex == 1) currentMode = MODE_SOCIAL;
       else if (menuIndex == 2) currentMode = MODE_RELAX;
 
-      sessionStartTime = currentMillis; // Reset timer upon selection
+      sessionStartTime = currentMillis; // Reset timer every time a new mode is selected
       lastDebounceTime = currentMillis;
     }
   }
 
-  // ==========================================
   // 2. GET DATA: SENSOR READINGS
-  // ==========================================
+
   int rawAnalogLDR = analogRead(PIN_LDR_A0); // 0 (bright) - 1023 (dark)
   bool soundSpike = digitalRead(PIN_SOUND_D5);
   
   // Convert raw reading to direct Lux scale
   int mappedLux = map(rawAnalogLDR, 0, 1023, 0, 500); 
 
-  // ==========================================
+
   // 3. UNDERSTAND DATA: RULE ENGINE
-  // ==========================================
+
   int pwmBrightness = 0;
   String modeString = "";
   String statusString = "OK";
@@ -143,14 +142,12 @@ void loop() {
   // Drive Hardware PWM Light Output
   analogWrite(PIN_LED_PWM, pwmBrightness);
 
-  // ==========================================
   // 4. USE DATA: DRAW ON PHYSICAL OLED DISPLAY
-  // ==========================================
+
   updateOLEDDisplay(modeString, mappedLux, pwmBrightness, elapsedSec, statusString, menuIndex);
 
-  // ==========================================
   // 5. USE DATA: STREAM SERIAL DATA TO LAPTOP
-  // ==========================================
+
   Serial.print("DATA:");
   Serial.print(modeString); Serial.print(",");
   Serial.print(mappedLux); Serial.print(",");
@@ -166,6 +163,7 @@ void updateOLEDDisplay(String activeMode, int lux, int pwm, unsigned long elapse
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
 
+ //SCREEN SETTINGS  
   if (activeMode == "WELCOME") {
     // Welcome Greeting Screen
     display.setTextSize(1);
